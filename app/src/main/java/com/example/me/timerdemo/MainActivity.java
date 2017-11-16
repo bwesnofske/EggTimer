@@ -8,9 +8,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Toast;
+
+import org.w3c.dom.Text;
 
 /*
 Seekbar will adjust currentTime Variable
@@ -23,14 +28,19 @@ when timer reaches 0 play audio file
 public class MainActivity extends AppCompatActivity {
 
 
-public int seconds = 0;
-public int minutes = 0;
-public long currentTime = 0;
-public TextView timerView;
-public SeekBar seekBar;
-boolean timerActive = false;
-Button goButton;
-CountDownTimer countDownTimer;
+    public int seconds = 0;
+    public int minutes = 0;
+    public long currentTime = 0;
+    public TextView timerView;
+    public SeekBar seekBar;
+    boolean timerActive = false;
+    boolean alarmActive = false;
+    MediaPlayer mplayer;
+    TextView textView;
+    ImageView imageView;
+    CountDownTimer countDownTimer;
+    Animation shake;
+    //View shakeView = findViewById(R.id.imageView);
 
 
     @Override
@@ -42,6 +52,7 @@ CountDownTimer countDownTimer;
 
         seekBar = (SeekBar) findViewById(R.id.seekBar);
         seekBar.setMax(600);
+
 
         updateTimer(currentTime);
 
@@ -65,32 +76,38 @@ CountDownTimer countDownTimer;
     }
 
 
-
     public void startTimer(long curTime) {
-        countDownTimer = new CountDownTimer((curTime*1000), 1000) {
+        countDownTimer = new CountDownTimer((curTime * 1000), 1000) {
 
 
             @Override
             public void onTick(long l) {
 
-                Log.i("Seconds Left", String.valueOf(l/1000));
-                updateTimer(l/1000);
+                Log.i("Seconds Left", String.valueOf(l / 1000));
+                updateTimer(l / 1000);
 
             }
 
             @Override
             public void onFinish() {
-                // add sound
-                MediaPlayer mplayer = MediaPlayer.create(getApplicationContext(), R.raw.airhorn);
-                mplayer.start();
-                goButton.setText("Go!");
-                seekBar.setEnabled(true);
+                alarmActive = true;
+                timerUp();
                 seekBar.setProgress(0);
-                Log.i("Done", "Count Down Timer Done");
             }
         }.start();
 
     }
+
+    public void timerUp() {
+        textView.setText("Tap to Stop Alarm!");
+        mplayer = MediaPlayer.create(getApplicationContext(), R.raw.airhorn);
+        mplayer.start();
+        mplayer.setLooping(true);
+
+        shake = AnimationUtils.loadAnimation(this, R.anim.shake);
+        findViewById(R.id.imageView).startAnimation(shake);
+    }
+
 
     public void updateTimer(long curTime) {
 
@@ -109,46 +126,35 @@ CountDownTimer countDownTimer;
     }
 
     public void startTime(View view) {
-        goButton = (Button)findViewById(R.id.goButton);
-        //goButton.setText("TEST!");
+        textView = (TextView)findViewById(R.id.textView);
 
-        if(timerActive == false){
-            timerActive = true;
-            seekBar.setEnabled(false);
-            goButton.setText("Stop!");
-            startTimer(currentTime);
-
-        } else {
+        if(alarmActive){
+            findViewById(R.id.imageView).clearAnimation();
+            mplayer.setLooping(false);
             timerActive = false;
             seekBar.setEnabled(true);
-            goButton.setText("Go!");
-            countDownTimer.cancel();
-            seekBar.setProgress((int)currentTime);
+            textView.setText("Tap to Start!");
+            seekBar.setProgress((int) currentTime);
+            alarmActive = false;
+
+        } else {
+
+            if (timerActive == false) {
+                timerActive = true;
+                seekBar.setEnabled(false);
+                textView.setText("Tap to Stop...");
+                startTimer(currentTime);
+
+            } else {
+                timerActive = false;
+                seekBar.setEnabled(true);
+                textView.setText("Tap to Start!");
+                countDownTimer.cancel();
+                seekBar.setProgress((int) currentTime);
+            }
+
         }
-
-
-
-
     }
 }
 
-
-
-
-    /*
-        new CountDownTimer(10000, 1000) {
-
-
-            @Override
-            public void onTick(long l) {
-                Log.i("Seconds Left", String.valueOf(l/1000));
-            }
-
-            @Override
-            public void onFinish() {
-                Log.i("Done", "Count Down Timer Done");
-            }
-        }.start();
-
-        */
 
